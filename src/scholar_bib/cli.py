@@ -5,8 +5,9 @@ from rich.console import Console
 from .parser import BibParser
 from .linter import BibLinter
 from .deduplicator import BibDeduplicator
+from .resolver import BibResolver
 
-app = typer.Typer(help="Scholar Bib Kit: Manage, lint, and deduplicate BibTeX databases.")
+app = typer.Typer(help="Scholar Bib Kit: Manage, lint, deduplicate, and resolve BibTeX databases.")
 console = Console()
 
 @app.command("lint")
@@ -83,6 +84,34 @@ def dedup(
     BibParser.save(deduped_library, output_file)
     console.print(f"[bold green]Successfully saved deduplicated database to {output_file}[/bold green]")
     console.print(f"[yellow]Removed {duplicates_removed} duplicate entries.[/yellow]")
+
+@app.command("resolve")
+def resolve(
+    input_file: Path = typer.Argument(..., help="Path to the input BibTeX file with messy entries"),
+    output_file: Path = typer.Option(None, "--output", "-o", help="Path to save the resolved file (defaults to overwrite)")
+):
+    """Resolve messy entries or missing DOIs by querying the Crossref API."""
+    import asyncio
+    
+    if not output_file:
+        output_file = input_file
+        
+    console.print(f"[cyan]Loading {input_file}...[/cyan]")
+    library = BibParser.load(input_file)
+    
+    console.print(f"[cyan]Resolving {len(library.entries)} entries via Crossref API...[/cyan]")
+    
+    async def run_resolve():
+        resolver = BibResolver()
+        with console.status("[cyan]Querying Crossref API...") as status:
+            def update_progress():
+                pass # A simple callback
+            await resolver.resolve_library(library, progress_callback=update_progress)
+            
+    asyncio.run(run_resolve())
+    
+    BibParser.save(library, output_file)
+    console.print(f"[bold green]Successfully saved resolved database to {output_file}[/bold green]")
 
 if __name__ == "__main__":
     app()
