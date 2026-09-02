@@ -26,4 +26,4 @@ scholar-bib = "scholar_bib.cli:app"
 packages = ["src/scholar_bib"]
 
 [tool.uv.sources]
-scholar-search-kit = { path = "../scholar-search-kit" }
+scholar-search-kit = { path = "../scholar-search-kit", editable = true }
