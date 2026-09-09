@@ -1,11 +1,21 @@
-import typer
+import sys
 from pathlib import Path
+
+import typer
 from rich.console import Console
 
-from .parser import BibParser
-from .linter import BibLinter
 from .deduplicator import BibDeduplicator
+from .linter import BibLinter
+from .parser import BibParser
 from .resolver import BibResolver
+
+# Force UTF-8 on Windows to prevent Rich console UnicodeEncodeError on OEM code pages
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 app = typer.Typer(help="Scholar Bib Kit: Manage, lint, deduplicate, and resolve BibTeX databases.")
 console = Console()
